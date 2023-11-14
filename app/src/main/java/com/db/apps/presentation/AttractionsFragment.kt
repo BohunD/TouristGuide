@@ -1,28 +1,23 @@
-package com.db.apps
+package com.db.apps.presentation
 
 import android.location.Geocoder
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.LinearLayoutManager
+import android.widget.Toast
+import androidx.lifecycle.ViewModelProvider
+import com.db.apps.RvAdapter
+import com.db.apps.Utils
 import com.db.apps.databinding.FragmentAttractionsBinding
 import com.db.apps.model.Photo
 import com.db.apps.model.PlaceItemRv
-import com.db.apps.model.Root
 import com.db.apps.model.RootAttraction
 import com.db.apps.retrofit.MyGoogleApiService
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.maps.model.Marker
 import retrofit2.Call
 import retrofit2.Response
-import java.util.ArrayList
 import java.util.Locale
 
 
@@ -37,13 +32,7 @@ class AttractionsFragment : Fragment() {
     private val myRvList = mutableListOf<PlaceItemRv>()
     private lateinit var adapter: RvAdapter
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments.let {
-            lat = it?.getDouble(LAT)!!
-            lng = it.getDouble(LNG)
-        }
-    }
+    private lateinit var  sharedViewModel: SharedViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -56,6 +45,11 @@ class AttractionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         myService = Utils.googleApiService
+        sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
+        sharedViewModel.latLngLD.observe(requireActivity()){
+            lat = it.latitude
+            lng = it.longitude
+        }
         buildLocationCallback()
         findAttractions()
 
@@ -78,8 +72,12 @@ class AttractionsFragment : Fragment() {
                     if (response.isSuccessful && response.body()?.results?.isNotEmpty()!!) {
                         for (i in 0 until response.body()?.results?.size!!) {
                             val googlePlace = response.body()?.results!![i]
+                            var photoUrl = ""
+                            if(googlePlace.photos.size>0) {
+                                 photoUrl = getPhotoUrl(googlePlace.photos[0])
+                            }
                             val myPlace = PlaceItemRv(
-                                photoUrl = getPhotoUrl(googlePlace.photos[0]),
+                                photoUrl,
                                 placeName = googlePlace.name.toString(),
                                 placeDescription = googlePlace.formattedAddress.toString()
                             )
@@ -96,7 +94,8 @@ class AttractionsFragment : Fragment() {
                 }
 
                 override fun onFailure(call: Call<RootAttraction>, t: Throwable) {
-                    TODO("Not yet implemented")
+                    Log.d("ATTRACTIONS2:", t.message.toString())
+                    Toast.makeText(requireContext(), "Failed :(", Toast.LENGTH_LONG).show()
                 }
 
             })
@@ -124,7 +123,6 @@ class AttractionsFragment : Fragment() {
         }else return ""
     }
 
-
     private fun getCityName(lat: Double,long: Double):String{
         var cityName: String?
         val geoCoder = Geocoder(requireContext(), Locale.US)
@@ -144,12 +142,7 @@ class AttractionsFragment : Fragment() {
         private const val LAT = "lat"
         private const val LNG = "lng"
         @JvmStatic
-        fun newInstance(lat: Double, lng: Double) =
-            AttractionsFragment().apply {
-                arguments = Bundle().apply {
-                    putDouble(LAT, lat)
-                    putDouble(LNG, lng)
-                }
-            }
+        fun newInstance() =
+            AttractionsFragment()
     }
 }

@@ -2,8 +2,7 @@ package com.db.apps
 
 open class CheckerLD<out T>(private val content: T) {
 
-    private var hasBeenHandled = false
-        private set
+     var hasBeenHandled = false
 
     fun getContentIfNotHandled(): T? {
         return if (hasBeenHandled) {
@@ -13,4 +12,5 @@ open class CheckerLD<out T>(private val content: T) {
             content
         }
     }
+    fun peekContent(): T = content
 }

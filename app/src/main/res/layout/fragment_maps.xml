@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".MapsFragment">
+    tools:context=".presentation.MapsFragment">
+
 
     <fragment
         android:layout_width="match_parent"
@@ -18,9 +19,10 @@
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bot_nav_view"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:itemBackground="@color/design_default_color_primary"
+        android:background="#118ab2"
         app:itemIconTint="@drawable/nav_selector"
         app:itemTextColor="@drawable/nav_selector"
         app:menu="@menu/bot_menu"
@@ -28,5 +30,33 @@
         >
 
     </com.google.android.material.bottomnavigation.BottomNavigationView>
+    <LinearLayout
+        android:id="@+id/ll_gif"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/white"
+        android:orientation="vertical">
+        <pl.droidsonroids.gif.GifImageView
+            android:src="@drawable/location_gif"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/ll_progress"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="#99cccccc"
+        android:gravity="center"
+        >
+        <ProgressBar
+            android:layout_width="70dp"
+            android:layout_height="70dp"/>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
