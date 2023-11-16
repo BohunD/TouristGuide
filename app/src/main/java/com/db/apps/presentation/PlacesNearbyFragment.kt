@@ -120,6 +120,7 @@ class PlacesNearbyFragment : Fragment() {
                 R.id.hospital -> localPlacesTypes = (arrayListOf("hospital"))
                 R.id.food -> localPlacesTypes = (arrayListOf("cafe", "restaurant"))
                 R.id.education -> localPlacesTypes = (arrayListOf("school", "university"))
+                R.id.hotel -> localPlacesTypes = (arrayListOf("hotel", "hostel"))
             }
             findPlacesNearBy(localPlacesTypes)
             true
@@ -177,6 +178,21 @@ class PlacesNearbyFragment : Fragment() {
                     "school" -> {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_education)
+                        )
+                    }
+                    "university" -> {
+                        markerOptions.icon(
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_education)
+                        )
+                    }
+                    "hotel"->{
+                        markerOptions.icon(
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_hotel)
+                        )
+                    }
+                    "hostel"->{
+                        markerOptions.icon(
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_hotel)
                         )
                     }
 

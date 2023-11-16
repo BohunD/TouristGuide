@@ -30,6 +30,11 @@
         android:icon="@drawable/hospital"
         app:showAsAction="ifRoom"/>
 
-
+    <item
+        android:id="@+id/hotel"
+        android:enabled="true"
+        android:title=""
+        android:icon="@drawable/hotel"
+        app:showAsAction="ifRoom"/>
 
 </menu>
