@@ -1,7 +1,10 @@
 package com.db.apps.model
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.android.parcel.Parcelize
 
+@Parcelize
 data class ResultAttraction (
 
     @SerializedName("business_status"       ) var businessStatus      : String?           = null,
@@ -18,4 +21,4 @@ data class ResultAttraction (
     @SerializedName("reference"             ) var reference           : String?           = null,
     @SerializedName("types"                 ) var types               : ArrayList<String> = arrayListOf(),
     @SerializedName("user_ratings_total"    ) var userRatingsTotal    : Int?              = null
-)
+) : Parcelable

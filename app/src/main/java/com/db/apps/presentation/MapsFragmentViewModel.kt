@@ -18,7 +18,7 @@ class MapsFragmentViewModel(
 ) : ViewModel() {
      val placesNearbyLiveData = SingleLiveData<List<Result>>()
 
-    fun getPlacesNearby(lat: Double, lng: Double, placeTypes: List<String>) {
+    suspend fun getPlacesNearby(lat: Double, lng: Double, placeTypes: List<String>) {
         viewModelScope.launch {
             try {
                 val placesNearby = getPlacesNearbyUseCase.execute(lat, lng, placeTypes)

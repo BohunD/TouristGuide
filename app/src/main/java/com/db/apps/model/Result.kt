@@ -1,5 +1,9 @@
 package com.db.apps.model
 
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+
+@Parcelize
 data class Result(
     val business_status: String?=null,
     val geometry: Geometry?=null,
@@ -17,4 +21,4 @@ data class Result(
     val types: List<String>?=null,
     val user_ratings_total: Int?=null,
     val vicinity: String?=null
-)
+) : Parcelable

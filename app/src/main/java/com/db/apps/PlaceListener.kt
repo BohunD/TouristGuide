@@ -1,6 +1,7 @@
 package com.db.apps
-import com.db.apps.model.Result
+import com.db.apps.model.ResultAttraction
+
 interface PlaceListener {
-    fun onLayoutClick(place: Result)
+    fun onLayoutClick(place: ResultAttraction)
 
 }

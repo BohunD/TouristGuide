@@ -5,7 +5,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.db.apps.presentation.AttractionsFragment
-import com.db.apps.presentation.MapsFragment
+import com.db.apps.presentation.PlacesNearbyFragment
 
 
 private const val NUM_TABS = 2
@@ -19,9 +19,9 @@ public class ViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
 
     override fun createFragment(position: Int): Fragment {
         when (position) {
-            0 -> return MapsFragment()
+            0 -> return PlacesNearbyFragment()
             1 -> return AttractionsFragment()
         }
-        return MapsFragment()
+        return PlacesNearbyFragment()
     }
 }

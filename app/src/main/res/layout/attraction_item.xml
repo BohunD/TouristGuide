@@ -4,6 +4,7 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_marginEnd="5dp"
+    android:id="@+id/layout"
     android:layout_marginBottom="5dp"
     android:layout_marginStart="5dp"
 
@@ -15,25 +16,48 @@
         android:layout_height="match_parent">
         <ImageView
             android:id="@+id/iv_place_photo"
+            android:src="@drawable/frame"
             android:layout_width="match_parent"
             android:layout_height="200dp"
             />
-        <TextView
-            android:id="@+id/tv_place_name"
-            android:layout_marginTop="10dp"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/black"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            />
-        <TextView
-            android:id="@+id/tv_place_description"
-            android:layout_marginTop="10dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:layout_marginBottom="3dp"/>
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_weight="4">
+                <TextView
+                    android:id="@+id/tv_place_name"
+                    android:text="name"
+                    android:layout_marginTop="10dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/black"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    />
+                <TextView
+                    android:id="@+id/tv_place_description"
+                    android:layout_marginTop="10dp"
+                    android:text="address"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:layout_marginBottom="3dp"/>
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/iv_like"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:src="@drawable/like_inactive"
+                android:layout_weight="1"/>
+        </LinearLayout>
+
     </LinearLayout>
 
 

@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.db.apps.model.Photo
 import com.db.apps.retrofit.MyGoogleApiService
 import com.db.apps.retrofit.MyRetrofitClient
 import com.google.android.gms.maps.model.BitmapDescriptor
@@ -16,7 +17,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
 
 object Utils {
-    private val GOOGLE_API_URL = "https://maps.googleapis.com/"
+    private const val GOOGLE_API_URL = "https://maps.googleapis.com/"
 
     val googleApiService: MyGoogleApiService
         get() = MyRetrofitClient.getClient(GOOGLE_API_URL).create(MyGoogleApiService::class.java)
@@ -55,6 +56,17 @@ fun bitmapDescriptorFromVector(
     val canvas = Canvas(bitmap)
     vectorDrawable.draw(canvas)
     return BitmapDescriptorFactory.fromBitmap(bitmap)
+}
+
+ fun getPhotoUrl(photo: Photo?) :String {
+    if (photo != null) {
+        return StringBuilder(
+            "https://maps.googleapis.com/maps/api/place/photo?" +
+                    "maxwidth=${photo.width}" +
+                    "&photo_reference=${photo.photo_reference}" +
+                    "&key=AIzaSyDED3IlT2SjXseJPPeHWd5kGS1KJDCEsGQ"
+        ).toString()
+    }else return ""
 }
 
 

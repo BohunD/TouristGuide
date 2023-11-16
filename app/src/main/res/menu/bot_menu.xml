@@ -6,28 +6,30 @@
     <item
         android:id="@+id/market"
         android:enabled="true"
-        android:title="Markets"
+        android:title=""
         android:icon="@drawable/shop"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/education"
         android:enabled="true"
-        android:title="Education"
+        android:title=""
         android:icon="@drawable/graduation"
         app:showAsAction="ifRoom"/>
 
     <item
         android:id="@+id/food"
         android:enabled="true"
-        android:title="Food"
+        android:title=""
         android:icon="@drawable/food"
         app:showAsAction="ifRoom"/>
 
     <item
         android:id="@+id/hospital"
         android:enabled="true"
-        android:title="Hospital"
+        android:title=""
         android:icon="@drawable/hospital"
         app:showAsAction="ifRoom"/>
+
+
 
 </menu>

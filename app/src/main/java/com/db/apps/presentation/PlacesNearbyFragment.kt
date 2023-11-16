@@ -3,6 +3,7 @@ package com.db.apps.presentation
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.view.LayoutInflater
@@ -10,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -17,7 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.db.apps.R
 import com.db.apps.bitmapDescriptorFromVector
-import com.db.apps.databinding.FragmentMapsBinding
+import com.db.apps.databinding.FragmentPlacesNearbyBinding
 import com.db.apps.model.Result
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -36,25 +38,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class MapsFragment : Fragment() {
+class PlacesNearbyFragment : Fragment() {
 
     private var lat: Double = 0.0
     private var lng: Double = 0.0
+    private var fromPlace = false
 
     private lateinit var lastLocation: Location
     private var marker: Marker? = null
 
-    private  var fusedLocationProviderClient: FusedLocationProviderClient?=null
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
 
     private lateinit var callback: OnMapReadyCallback
-    private lateinit var binding: FragmentMapsBinding
+    private lateinit var binding: FragmentPlacesNearbyBinding
     private var localPlacesTypes = listOf<String>()
 
     private var myMap: GoogleMap? = null
-    private var prevList: List<Result> = listOf()
-
     private lateinit var viewModel: MapsFragmentViewModel
     private lateinit var sharedViewModel: SharedViewModel
 
@@ -70,23 +71,37 @@ class MapsFragment : Fragment() {
                     binding.botNavView.visibility = View.VISIBLE
                 }
             }
-             else -> {
-                 Toast.makeText(
-                     requireContext(),
-                     "Location permission not granted. Closing the application.",
-                     Toast.LENGTH_LONG
-                 ).show()
-                 requireActivity().finish()
-                 requireActivity().finishAffinity()
-        }
+
+            else -> {
+                Toast.makeText(
+                    requireContext(),
+                    "Location permission not granted. Closing the application.",
+                    Toast.LENGTH_LONG
+                ).show()
+                requireActivity().finish()
+                requireActivity().finishAffinity()
+            }
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val mLat = arguments?.getDouble(LAT)
+        val mLng = arguments?.getDouble(LNG)
+        if (mLat != null&& mLng!=null) {
+            lat = mLat
+            lng = mLng
+            fromPlace = true
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-        binding = FragmentMapsBinding.inflate(inflater, container, false)
+        binding = FragmentPlacesNearbyBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -94,91 +109,78 @@ class MapsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
-        viewModel = ViewModelProvider(this, MapsFragmentViewModelFactory(requireActivity()))[MapsFragmentViewModel::class.java]
+        viewModel = ViewModelProvider(
+            this,
+            MapsFragmentViewModelFactory(requireActivity())
+        )[MapsFragmentViewModel::class.java]
         checkPermission()
         binding.botNavView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.market -> localPlacesTypes = (arrayListOf("store", "market"))
-                R.id.hospital -> localPlacesTypes =(arrayListOf("hospital"))
-                R.id.food -> localPlacesTypes =(arrayListOf("cafe", "restaurant"))
-                R.id.education -> localPlacesTypes =(arrayListOf("school", "university"))
+                R.id.hospital -> localPlacesTypes = (arrayListOf("hospital"))
+                R.id.food -> localPlacesTypes = (arrayListOf("cafe", "restaurant"))
+                R.id.education -> localPlacesTypes = (arrayListOf("school", "university"))
             }
             findPlacesNearBy(localPlacesTypes)
             true
         }
     }
 
-private fun findPlacesNearBy(placesTypes: List<String>){
-    viewModel.getPlacesNearby(lat, lng, placesTypes)
-    showLoading()
-    viewModel.placesNearbyLiveData.observe(viewLifecycleOwner){
-        showPlaces(localPlacesTypes , it)
-        prevList = it
+    private fun findPlacesNearBy(placesTypes: List<String>) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            viewModel.getPlacesNearby(lat, lng, placesTypes)
+        }
+        showLoading()
+        viewModel.placesNearbyLiveData.observe(viewLifecycleOwner) {
+            showPlaces(localPlacesTypes, it)
+        }
     }
 
-}
-
-    private fun showPlaces(placeTypes: List<String>,places: List<Result>){
+    private fun showPlaces(placeTypes: List<String>, places: List<Result>) {
         myMap?.clear()
         initMapCallback()
         callback.onMapReady(myMap!!)
-        for(placeType in placeTypes) {
+        for (placeType in placeTypes) {
             for (googlePlace in places) {
                 val markerOptions = MarkerOptions()
-                val curLat = googlePlace.geometry!!.location?.lat
-                val curLng = googlePlace.geometry.location?.lng
-                val curPlaceName = googlePlace.name
-                val curLatLng = LatLng(curLat!!, curLng!!)
+                val curLatLng = LatLng(
+                    googlePlace.geometry!!.location?.lat!!,
+                    googlePlace.geometry.location?.lng!!
+                )
                 markerOptions.position(curLatLng)
-                markerOptions.title(curPlaceName)
+                markerOptions.title(googlePlace.name)
                 when (placeType) {
                     "restaurant" -> {
                         markerOptions.icon(
-                            bitmapDescriptorFromVector(
-                                requireContext(),
-                                R.drawable.ic_food
-                            )
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_food)
                         )
                     }
 
                     "cafe" -> {
                         markerOptions.icon(
-                            bitmapDescriptorFromVector(
-                                requireContext(),
-                                R.drawable.ic_food
-                            )
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_food)
                         )
                     }
 
                     "store" -> {
                         markerOptions.icon(
-                            bitmapDescriptorFromVector(
-                                requireContext(),
-                                R.drawable.ic_shop
-                            )
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_shop)
                         )
                     }
 
                     "hospital" -> {
                         markerOptions.icon(
-                            bitmapDescriptorFromVector(
-                                requireContext(),
-                                R.drawable.ic_hospital
-                            )
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_hospital)
                         )
                     }
 
                     "school" -> {
                         markerOptions.icon(
-                            bitmapDescriptorFromVector(
-                                requireContext(),
-                                R.drawable.ic_education
-                            )
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_education)
                         )
                     }
 
                     else -> return
-
                 }
                 myMap!!.addMarker(markerOptions)
                 myMap!!.moveCamera(CameraUpdateFactory.newLatLng(LatLng(lat, lng)))
@@ -189,12 +191,12 @@ private fun findPlacesNearBy(placesTypes: List<String>){
         }
     }
 
-    private fun showLoading(){
+    private fun showLoading() {
         binding.llProgress.visibility = View.VISIBLE
         binding.botNavView.visibility = View.GONE
     }
 
-    private fun finishLoading(){
+    private fun finishLoading() {
         binding.llProgress.visibility = View.GONE
         binding.botNavView.visibility = View.VISIBLE
     }
@@ -205,9 +207,10 @@ private fun findPlacesNearBy(placesTypes: List<String>){
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+            fusedLocationProviderClient =
+                LocationServices.getFusedLocationProviderClient(requireContext())
             buildRequest()
-            buildLocationCallback()
+            buildLocationCallback(fromPlace)
             fusedLocationProviderClient =
                 LocationServices.getFusedLocationProviderClient(requireActivity())
             fusedLocationProviderClient?.requestLocationUpdates(
@@ -216,26 +219,31 @@ private fun findPlacesNearBy(placesTypes: List<String>){
                 Looper.myLooper()
             )
         } else {
-            locationPermissionRequest.launch(arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION))
+            locationPermissionRequest.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            )
         }
     }
 
-    private fun buildLocationCallback() {
+    private fun buildLocationCallback(isPlace: Boolean) {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(p0: LocationResult) {
                 lastLocation = p0.locations[p0.locations.size - 1]
                 if (marker != null) {
                     marker!!.remove()
                 }
-                lat = lastLocation.latitude
-                lng = lastLocation.longitude
+                if (!isPlace) {
+                    lat = lastLocation.latitude
+                    lng = lastLocation.longitude
+                }
                 lifecycleScope.launch(Dispatchers.Main) {
                     delay(800)
                     binding.llGif.visibility = View.GONE
                     binding.botNavView.visibility = View.VISIBLE
                 }
-                sharedViewModel.saveLatLng(LatLng(lat,lng))
+                sharedViewModel.saveLatLng(LatLng(lat, lng))
                 sharedViewModel.setLocationReceived(true)
                 initMapCallback()
             }
@@ -245,6 +253,7 @@ private fun findPlacesNearBy(placesTypes: List<String>){
     private fun initMapCallback() {
         callback = OnMapReadyCallback { mMap ->
             val latLng = LatLng(lat, lng)
+
             val optionsMarker = MarkerOptions()
                 .position(latLng)
                 .title("Your position")
@@ -264,18 +273,19 @@ private fun findPlacesNearBy(placesTypes: List<String>){
             }
 
             mMap.uiSettings.isZoomControlsEnabled = true
-            lifecycleScope.launch(Dispatchers.Main) {
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
-                mMap.animateCamera(CameraUpdateFactory.zoomTo(13f))
-            }
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13f))
+
             myMap = mMap
         }
+
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
     }
 
     override fun onStop() {
-        if(fusedLocationProviderClient!=null)
+        if (fusedLocationProviderClient != null)
             fusedLocationProviderClient?.removeLocationUpdates(locationCallback)
         super.onStop()
     }
@@ -289,8 +299,15 @@ private fun findPlacesNearBy(placesTypes: List<String>){
     }
 
     companion object {
-        fun newInstance(): Fragment {
-            return MapsFragment()
+        private const val LAT: String = "Lat"
+        private const val LNG: String = "Lng"
+        fun newInstance(myLat: Double?, myLng: Double?): Fragment {
+            return PlacesNearbyFragment().apply {
+                arguments = Bundle().apply {
+                    putDouble(LAT, myLat!!)
+                    putDouble(LNG, myLng!!)
+                }
+            }
         }
     }
 }

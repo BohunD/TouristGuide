@@ -1,10 +1,12 @@
 package com.db.apps.presentation
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.db.apps.R
 import com.db.apps.ViewPagerAdapter
 import com.db.apps.databinding.ActivityMainBinding
 import com.google.android.material.tabs.TabLayoutMediator
@@ -14,13 +16,14 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     val pages = arrayOf(
-        "Page 1",
-        "page 2"
+        R.drawable.map,
+        R.drawable.poi
     )
     // TODO add Progressbar while geeting places nearby;
     // TODO add livedata for "location received" and then make tabslayout visible
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: SharedViewModel
+    @SuppressLint("UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -44,7 +47,7 @@ class MainActivity : AppCompatActivity() {
 
         viewPager.isUserInputEnabled = false
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            tab.text = pages[position]
+            tab.icon = getDrawable(pages[position])
         }.attach()
     }
 }
