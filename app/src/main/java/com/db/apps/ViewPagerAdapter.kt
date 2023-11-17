@@ -5,10 +5,12 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.db.apps.presentation.AttractionsFragment
+import com.db.apps.presentation.FavouritesAdapter
+import com.db.apps.presentation.FavouritesFragment
 import com.db.apps.presentation.PlacesNearbyFragment
 
 
-private const val NUM_TABS = 2
+private const val NUM_TABS = 3
 
 public class ViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
     FragmentStateAdapter(fragmentManager, lifecycle) {
@@ -21,6 +23,7 @@ public class ViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
         when (position) {
             0 -> return PlacesNearbyFragment()
             1 -> return AttractionsFragment()
+            2 -> return FavouritesFragment()
         }
         return PlacesNearbyFragment()
     }

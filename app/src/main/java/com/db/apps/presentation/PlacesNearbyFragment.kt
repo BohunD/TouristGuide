@@ -100,7 +100,7 @@ class PlacesNearbyFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
         binding = FragmentPlacesNearbyBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -116,11 +116,11 @@ class PlacesNearbyFragment : Fragment() {
         checkPermission()
         binding.botNavView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.market -> localPlacesTypes = (arrayListOf("store", "market"))
+                R.id.market -> localPlacesTypes = (arrayListOf("store","supermarket","shopping_mall"))
                 R.id.hospital -> localPlacesTypes = (arrayListOf("hospital"))
                 R.id.food -> localPlacesTypes = (arrayListOf("cafe", "restaurant"))
                 R.id.education -> localPlacesTypes = (arrayListOf("school", "university"))
-                R.id.hotel -> localPlacesTypes = (arrayListOf("hotel", "hostel"))
+                R.id.hotel -> localPlacesTypes = (arrayListOf("lodging"))
             }
             findPlacesNearBy(localPlacesTypes)
             true
@@ -155,42 +155,35 @@ class PlacesNearbyFragment : Fragment() {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_food)
                         )
-                    }
-
-                    "cafe" -> {
+                    }"cafe" -> {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_food)
                         )
-                    }
-
-                    "store" -> {
+                    }"store" -> {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_shop)
                         )
-                    }
-
-                    "hospital" -> {
+                    }"supermarket" -> {
+                        markerOptions.icon(
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_shop)
+                        )
+                    }"shopping_mall" -> {
+                        markerOptions.icon(
+                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_shop)
+                        )
+                    }"hospital" -> {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_hospital)
                         )
-                    }
-
-                    "school" -> {
+                    }"school" -> {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_education)
                         )
-                    }
-                    "university" -> {
+                    }"university" -> {
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_education)
                         )
-                    }
-                    "hotel"->{
-                        markerOptions.icon(
-                            bitmapDescriptorFromVector(requireContext(), R.drawable.ic_hotel)
-                        )
-                    }
-                    "hostel"->{
+                    }"lodging"->{
                         markerOptions.icon(
                             bitmapDescriptorFromVector(requireContext(), R.drawable.ic_hotel)
                         )

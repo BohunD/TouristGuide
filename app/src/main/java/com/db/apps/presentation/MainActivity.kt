@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     val pages = arrayOf(
         R.drawable.map,
-        R.drawable.poi
+        R.drawable.poi,
+        R.drawable.heart
     )
     // TODO add Progressbar while geeting places nearby;
     // TODO add livedata for "location received" and then make tabslayout visible

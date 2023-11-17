@@ -10,6 +10,7 @@ import com.db.apps.GetPhotosFromApi
 import com.db.apps.R
 import com.db.apps.databinding.ActivityPlaceBinding
 import com.db.apps.model.Photo
+import com.db.apps.model.PlaceEntity
 import com.db.apps.model.ResultAttraction
 import com.db.apps.presentation.PlacesNearbyFragment
 import com.google.android.gms.maps.model.LatLng
@@ -67,10 +68,16 @@ class PlaceActivity : AppCompatActivity() {
     companion object {
 
         private const val PLACE = "place"
+        private const val PLACE_ENTITY = "place"
         @JvmStatic
         fun newIntent(context: Context,place: ResultAttraction): Intent{
             val intent = Intent(context, PlaceActivity::class.java)
             intent.putExtra(PLACE, place)
+            return intent
+        }
+        fun newIntent(context: Context,place: PlaceEntity): Intent{
+            val intent = Intent(context, PlaceActivity::class.java)
+            intent.putExtra(PLACE_ENTITY, place)
             return intent
         }
 

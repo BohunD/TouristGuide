@@ -52,7 +52,7 @@
             <ImageView
                 android:id="@+id/iv_like"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="33dp"
                 android:layout_gravity="center"
                 android:src="@drawable/like_inactive"
                 android:layout_weight="1"/>

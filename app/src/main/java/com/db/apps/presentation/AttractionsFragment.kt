@@ -9,16 +9,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.db.apps.PlaceListenerImpl
-import com.db.apps.RvAdapter
+import com.db.apps.AttractionsAdapter
 import com.db.apps.Utils
+import com.db.apps.data.repository.LocationRepositoryImpl
 import com.db.apps.databinding.FragmentAttractionsBinding
-import com.db.apps.getPhotoUrl
-import com.db.apps.model.Photo
+import com.db.apps.domain.repository.LocationRepository
+import com.db.apps.domain.usecases.AddToFavouritesUseCase
 import com.db.apps.model.ResultAttraction
 import com.db.apps.model.RootAttraction
-import com.db.apps.model.RootPhotos
 import com.db.apps.retrofit.MyGoogleApiService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Response
 import java.util.Locale
@@ -33,11 +36,15 @@ class AttractionsFragment : Fragment() {
     private var lng: Double = 0.0
 
     private val myRvList = mutableListOf<ResultAttraction>()
-    private lateinit var adapter: RvAdapter
+    private lateinit var adapter: AttractionsAdapter
 
     private lateinit var sharedViewModel: SharedViewModel
 
     private lateinit var listener: PlaceListenerImpl
+    private var cityName = ""
+
+    private lateinit var repository: LocationRepositoryImpl
+    private lateinit var addToFavouritesUseCase: AddToFavouritesUseCase
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,14 +57,23 @@ class AttractionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         myService = Utils.googleApiService
+        repository = LocationRepositoryImpl(requireContext())
+        addToFavouritesUseCase = AddToFavouritesUseCase(repository)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         sharedViewModel.latLngLD.observe(requireActivity()) {
             lat = it.latitude
             lng = it.longitude
+            lifecycleScope.launch(Dispatchers.Main) {
+                showInfo()
+            }
         }
-        findAttractions()
     }
 
+    private fun showInfo(){
+        getCityName(lat, lng)
+        binding.tvCityName.text = cityName
+        findAttractions()
+    }
 
     private fun findAttractions() {
         val url = getUrl()
@@ -77,10 +93,10 @@ class AttractionsFragment : Fragment() {
 
                         }
                     }
-                    adapter = RvAdapter(myRvList)
+                    adapter = AttractionsAdapter(myRvList)
                     binding.rvAttractions.adapter = adapter
-                    listener = PlaceListenerImpl(requireActivity(), adapter)
-                    adapter.setListener(listener)
+                    listener = PlaceListenerImpl(requireActivity(), addToFavouritesUseCase)
+                    adapter.setClickListener(listener)
                 }
 
                 override fun onFailure(call: Call<RootAttraction>, t: Throwable) {
@@ -91,13 +107,11 @@ class AttractionsFragment : Fragment() {
             })
     }
 
-
-
     private fun getUrl(): String {
         val googlePlaceUrl =
             StringBuilder("https://maps.googleapis.com/maps/api/place/textsearch/json")
         googlePlaceUrl.append(
-            "?query=${getCityName(lat, lng)}+city+point+of+interest" +
+            "?query=${cityName}+city+point+of+interest" +
                     "&language=${Locale.getDefault()}" +
                     "&key=AIzaSyDHj5-TbBeDNWb5imOdLOFPbT4ZFXkHftw"
         )
@@ -107,18 +121,18 @@ class AttractionsFragment : Fragment() {
 
 
 
-    private fun getCityName(lat: Double, long: Double): String {
-        var cityName: String?
+    private fun getCityName(lat: Double, long: Double) {
+        var name: String?
         val geoCoder = Geocoder(requireContext(), Locale.US)
         val address = geoCoder.getFromLocation(lat, long, 1)
-        cityName = address?.get(0)?.locality
-        if (cityName == null) {
-            cityName = address?.get(0)?.adminArea
-            if (cityName == null) {
-                cityName = address?.get(0)?.subAdminArea
+        name = address?.get(0)?.locality
+        if (name == null) {
+            name = address?.get(0)?.adminArea
+            if (name == null) {
+                name = address?.get(0)?.subAdminArea
             }
         }
-        return cityName!!
+        cityName = name!!
     }
 
     companion object {

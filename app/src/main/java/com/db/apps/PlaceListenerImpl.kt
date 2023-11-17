@@ -1,16 +1,34 @@
 package com.db.apps
 
 import android.app.Activity
+import com.db.apps.domain.usecases.AddToFavouritesUseCase
+import com.db.apps.model.PlaceEntity
 import com.db.apps.model.ResultAttraction
+import com.db.apps.presentation.FavouritesAdapter
 import com.db.apps.presentation.place.PlaceActivity
 
 class PlaceListenerImpl(
     private val activity: Activity,
-    val adapter: RvAdapter,
+    private val addToFavouritesUseCase: AddToFavouritesUseCase
 ) : PlaceListener {
-    override fun onLayoutClick(place: ResultAttraction) {
+
+
+    override fun onLayoutClick( place: ResultAttraction) {
         val intent = PlaceActivity.newIntent(activity,place)
         activity.startActivity(intent)
+    }
+
+    override fun onLayoutClick( place: PlaceEntity) {
+        val intent = PlaceActivity.newIntent(activity,place)
+        activity.startActivity(intent)
+    }
+
+    override suspend fun onLikeClick(place: ResultAttraction) {
+        addToFavouritesUseCase.execute(place)
+    }
+
+    override suspend fun onLikeClick(place: PlaceEntity) {
+        addToFavouritesUseCase.execute(place)
     }
 
 }

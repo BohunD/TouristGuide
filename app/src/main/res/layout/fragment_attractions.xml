@@ -9,9 +9,27 @@
     <LinearLayout
         android:id="@+id/ll_top"
         android:layout_width="match_parent"
+        android:gravity="center"
         android:layout_height="100dp"
         app:layout_constraintTop_toTopOf="parent"
         android:orientation="vertical" >
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/your_city_is"
+            android:textSize="20sp"
+            android:textColor="@color/black"
+            />
+        <TextView
+            android:id="@+id/tv_city_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:textColor="@color/black"
+            />
 
     </LinearLayout>
 

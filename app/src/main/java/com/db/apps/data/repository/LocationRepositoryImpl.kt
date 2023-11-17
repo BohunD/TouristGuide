@@ -1,21 +1,25 @@
 package com.db.apps.data.repository
 
+import android.content.Context
 import android.util.Log
+import androidx.room.Room
 import com.db.apps.Utils
+import com.db.apps.data.db.FavouritesDatabase
+import com.db.apps.model.PlaceEntity
 import com.db.apps.domain.repository.LocationRepository
+import com.db.apps.getPhotoUrl
 import com.db.apps.model.Result
-import com.db.apps.model.Root
-import com.db.apps.retrofit.MyGoogleApiService
+import com.db.apps.model.ResultAttraction
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
-import okhttp3.internal.Util
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import javax.inject.Inject
 import kotlin.coroutines.resumeWithException
 
-class LocationRepositoryImpl : LocationRepository {
+class LocationRepositoryImpl(
+    private val context: Context
+) : LocationRepository {
 
     override suspend fun getPlacesNearby(
         lat: Double, lng: Double,
@@ -40,6 +44,75 @@ class LocationRepositoryImpl : LocationRepository {
         }
         Log.d("MyLog5", "ResultList: $resultList")
         return resultList
+    }
+
+    override suspend fun addPlaceToFavourites(place: ResultAttraction) {
+        val db = Room.databaseBuilder(
+            context,
+            FavouritesDatabase::class.java,
+            "Favourites"
+        ).build()
+        val ph= mutableListOf<String>()
+        for(photo in place.photos){
+            ph.add(getPhotoUrl(photo))
+        }
+        val entity = PlaceEntity(
+            place_id = place.placeId!!,
+            place_name = place.name!!,
+            rating = place.rating!!,
+            formattedAddress = place.formattedAddress!!,
+            placeLat = place.geometry?.location!!.lat!!,
+            placeLng = place.geometry?.location!!.lng!!,
+            photos = ph[0]
+        )
+        var isLiked = false
+        val listFromDb = db.favouritesDao().getAll()
+        for(pl in listFromDb){
+            if(pl.place_id == place.placeId)
+                isLiked = true
+        }
+        if(isLiked){
+            entity.isLiked = false
+            db.favouritesDao().delete(entity)
+            Log.d("RepoImpl, addPlaceToFavourites", "DB contains: $entity")
+        }else{
+            entity.isLiked = true
+            db.favouritesDao().insert(entity)
+            Log.d("RepoImpl, addPlaceToFavourites", "DB NOT contains: $entity")
+        }
+
+    }
+
+    override suspend fun addPlaceToFavourites(place: PlaceEntity) {
+        val db = Room.databaseBuilder(
+            context,
+            FavouritesDatabase::class.java,
+            "Favourites"
+        ).build()
+        var isLiked = false
+        val listFromDb = db.favouritesDao().getAll()
+        for(pl in listFromDb){
+            if(pl.place_id == place.place_id)
+                isLiked = true
+        }
+        if(isLiked){
+            place.isLiked = false
+            db.favouritesDao().delete(place)
+            Log.d("RepoImpl, addPlaceToFavourites", "DB contains: $place")
+        }else{
+            place.isLiked = true
+            db.favouritesDao().insert(place)
+            Log.d("RepoImpl, addPlaceToFavourites", "DB NOT contains: $place")
+        }
+    }
+
+    override suspend fun getPlacesFromFavourites(): List<PlaceEntity> {
+        val db = Room.databaseBuilder(
+            context,
+            FavouritesDatabase::class.java,
+            "Favourites"
+        ).build()
+        return db.favouritesDao().getAll()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

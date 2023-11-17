@@ -9,7 +9,7 @@ import com.db.apps.domain.usecases.GetPlacesNearbyUseCase
 class MapsFragmentViewModelFactory(private val activity: Activity): ViewModelProvider.Factory {
 
     private val repository by lazy {
-        LocationRepositoryImpl()
+        LocationRepositoryImpl(activity.applicationContext)
     }
 
     private val getPlacesNearbyUseCase by lazy {

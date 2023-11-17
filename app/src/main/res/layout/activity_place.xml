@@ -7,13 +7,13 @@
     android:layout_height="match_parent"
     android:background="#B4BFDBF7"
     android:orientation="vertical"
-    android:padding="3dp"
     tools:context=".presentation.place.PlaceActivity">
 
     <FrameLayout
         android:id="@+id/frame_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_margin="3dp"
         android:layout_weight="14"
         android:background="@drawable/frame"
         >
@@ -30,6 +30,9 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginBottom="3dp"
         android:layout_marginTop="10dp"
         android:layout_weight="4">
         <LinearLayout
