@@ -5,9 +5,8 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.db.apps.presentation.AttractionsFragment
-import com.db.apps.presentation.FavouritesAdapter
-import com.db.apps.presentation.FavouritesFragment
 import com.db.apps.presentation.PlacesNearbyFragment
+import com.db.apps.presentation.favourites.FavouritesFragment
 
 
 private const val NUM_TABS = 3

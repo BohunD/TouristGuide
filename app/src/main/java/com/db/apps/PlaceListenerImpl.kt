@@ -1,10 +1,10 @@
 package com.db.apps
 
 import android.app.Activity
+import android.util.Log
 import com.db.apps.domain.usecases.AddToFavouritesUseCase
 import com.db.apps.model.PlaceEntity
 import com.db.apps.model.ResultAttraction
-import com.db.apps.presentation.FavouritesAdapter
 import com.db.apps.presentation.place.PlaceActivity
 
 class PlaceListenerImpl(
@@ -13,10 +13,10 @@ class PlaceListenerImpl(
 ) : PlaceListener {
 
 
-    override fun onLayoutClick( place: ResultAttraction) {
+    /*override fun onLayoutClick( place: ResultAttraction) {
         val intent = PlaceActivity.newIntent(activity,place)
         activity.startActivity(intent)
-    }
+    }*/
 
     override fun onLayoutClick( place: PlaceEntity) {
         val intent = PlaceActivity.newIntent(activity,place)
@@ -28,6 +28,7 @@ class PlaceListenerImpl(
     }
 
     override suspend fun onLikeClick(place: PlaceEntity) {
+        Log.d("OnLike", place.toString())
         addToFavouritesUseCase.execute(place)
     }
 

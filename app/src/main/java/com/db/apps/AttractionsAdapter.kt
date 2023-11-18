@@ -29,7 +29,8 @@ class AttractionsAdapter(
         holder.ivPhoto.loadUrl(holder.itemView.context, photoUrl)
         holder.tvName.text = list[position].name
         holder.tvDescription.text = list[position].formattedAddress
-        holder.layout.setOnClickListener { listener?.onLayoutClick(list[position]) }
+        //holder.layout.setOnClickListener { listener?.onLayoutClick(list[position]) }
+
         holder.ivLike.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
                 listener?.onLikeClick(list[position])

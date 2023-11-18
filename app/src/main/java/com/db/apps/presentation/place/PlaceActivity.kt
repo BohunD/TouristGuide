@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 class PlaceActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlaceBinding
-    private var currentPlace: ResultAttraction?=null
+    private var currentPlace: PlaceEntity?=null
     private var adapter: PhotosRvAdapter?=null
     private var photos: ArrayList<Photo>?=null
 
@@ -34,12 +34,12 @@ class PlaceActivity : AppCompatActivity() {
             currentPlace = intent.getParcelableExtra(PLACE)
         }
         binding.ratingBar.rating = currentPlace?.rating?.toFloat()!!
-        binding.tvPlaceName.text = currentPlace?.name
+        binding.tvPlaceName.text = currentPlace?.place_name
         binding.tvAddress.text = currentPlace?.formattedAddress
         getPhotos()
 
-        val placeLat = currentPlace?.geometry?.location?.lat!!
-        val placeLng = currentPlace?.geometry?.location?.lng!!
+        val placeLat = currentPlace?.placeLat
+        val placeLng = currentPlace?.placeLng
         binding.ivMap.setOnClickListener {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.container, PlacesNearbyFragment.newInstance(placeLat, placeLng))
@@ -60,8 +60,7 @@ class PlaceActivity : AppCompatActivity() {
 
     private fun setPhotos(list: ArrayList<Photo>){
         Log.d("setPhotos", list.toString())
-        currentPlace?.photos = list
-        adapter = PhotosRvAdapter(currentPlace?.photos!!)
+        adapter = PhotosRvAdapter(list)
         binding.rvPhotos.adapter = adapter
     }
 
@@ -70,11 +69,6 @@ class PlaceActivity : AppCompatActivity() {
         private const val PLACE = "place"
         private const val PLACE_ENTITY = "place"
         @JvmStatic
-        fun newIntent(context: Context,place: ResultAttraction): Intent{
-            val intent = Intent(context, PlaceActivity::class.java)
-            intent.putExtra(PLACE, place)
-            return intent
-        }
         fun newIntent(context: Context,place: PlaceEntity): Intent{
             val intent = Intent(context, PlaceActivity::class.java)
             intent.putExtra(PLACE_ENTITY, place)

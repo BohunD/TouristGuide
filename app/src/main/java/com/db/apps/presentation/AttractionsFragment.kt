@@ -8,22 +8,29 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.db.apps.PlaceListenerImpl
 import com.db.apps.AttractionsAdapter
+import com.db.apps.SingleLiveData
 import com.db.apps.Utils
 import com.db.apps.data.repository.LocationRepositoryImpl
 import com.db.apps.databinding.FragmentAttractionsBinding
 import com.db.apps.domain.repository.LocationRepository
 import com.db.apps.domain.usecases.AddToFavouritesUseCase
+import com.db.apps.getPhotoUrl
+import com.db.apps.model.PlaceEntity
 import com.db.apps.model.ResultAttraction
 import com.db.apps.model.RootAttraction
+import com.db.apps.presentation.favourites.FavouritesAdapter
 import com.db.apps.retrofit.MyGoogleApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Response
+import java.io.IOException
 import java.util.Locale
 
 
@@ -35,13 +42,13 @@ class AttractionsFragment : Fragment() {
     private var lat: Double = 0.0
     private var lng: Double = 0.0
 
-    private val myRvList = mutableListOf<ResultAttraction>()
-    private lateinit var adapter: AttractionsAdapter
+    private val myRvList = mutableListOf<PlaceEntity>()
+    private lateinit var adapter: FavouritesAdapter
 
     private lateinit var sharedViewModel: SharedViewModel
 
     private lateinit var listener: PlaceListenerImpl
-    private var cityName = ""
+    private var cityNameLD = SingleLiveData<String>()
 
     private lateinit var repository: LocationRepositoryImpl
     private lateinit var addToFavouritesUseCase: AddToFavouritesUseCase
@@ -70,9 +77,14 @@ class AttractionsFragment : Fragment() {
     }
 
     private fun showInfo(){
-        getCityName(lat, lng)
-        binding.tvCityName.text = cityName
-        findAttractions()
+        lifecycleScope.launch(Dispatchers.IO){
+            getCityName(lat, lng)
+        }
+        cityNameLD.observe(viewLifecycleOwner){
+            binding.tvCityName.text = it
+            findAttractions()
+        }
+
     }
 
     private fun findAttractions() {
@@ -84,19 +96,38 @@ class AttractionsFragment : Fragment() {
                     call: Call<RootAttraction>,
                     response: Response<RootAttraction>,
                 ) {
-                    if (response.isSuccessful && response.body()?.results?.isNotEmpty()!!) {
-                        for (i in 0 until response.body()?.results?.size!!) {
-                            val googlePlace = response.body()?.results!![i]
-                            myRvList.add(googlePlace)
+                    try {
+                        if (response.isSuccessful && response.body()?.results?.isNotEmpty()!!) {
+                            for (i in 0 until response.body()?.results?.size!!) {
+                                val googlePlace = response.body()?.results!![i]
+                                var photo = ""
+                                if (googlePlace.photos.isNotEmpty()) {
+                                    photo = getPhotoUrl(googlePlace.photos.get(0))
+                                }
+                                myRvList.add(
+                                    PlaceEntity(
+                                        googlePlace.placeId!!,
+                                        googlePlace.name!!,
+                                        googlePlace.rating!!,
+                                        googlePlace.formattedAddress!!,
+                                        googlePlace.geometry?.location?.lat!!,
+                                        googlePlace.geometry?.location?.lng!!,
+                                        photo
+                                    )
+                                )
 
-                            Log.d("findAttractions", googlePlace.photos.toString())
+                                Log.d("findAttractions", googlePlace.photos.toString())
 
+                            }
                         }
+                        adapter = FavouritesAdapter()
+                        adapter.setList(myRvList)
+                        binding.rvAttractions.adapter = adapter
+                        listener = PlaceListenerImpl(requireActivity(), addToFavouritesUseCase)
+                        adapter.setClickListener(listener)
+                    }catch (e: Exception){
+                        Toast.makeText(requireContext(), "Internet error. Try again", Toast.LENGTH_LONG).show()
                     }
-                    adapter = AttractionsAdapter(myRvList)
-                    binding.rvAttractions.adapter = adapter
-                    listener = PlaceListenerImpl(requireActivity(), addToFavouritesUseCase)
-                    adapter.setClickListener(listener)
                 }
 
                 override fun onFailure(call: Call<RootAttraction>, t: Throwable) {
@@ -111,7 +142,7 @@ class AttractionsFragment : Fragment() {
         val googlePlaceUrl =
             StringBuilder("https://maps.googleapis.com/maps/api/place/textsearch/json")
         googlePlaceUrl.append(
-            "?query=${cityName}+city+point+of+interest" +
+            "?query=${cityNameLD.value}+city+point+of+interest" +
                     "&language=${Locale.getDefault()}" +
                     "&key=AIzaSyDHj5-TbBeDNWb5imOdLOFPbT4ZFXkHftw"
         )
@@ -121,18 +152,27 @@ class AttractionsFragment : Fragment() {
 
 
 
-    private fun getCityName(lat: Double, long: Double) {
+    private suspend fun getCityName(lat: Double, long: Double) {
         var name: String?
-        val geoCoder = Geocoder(requireContext(), Locale.US)
-        val address = geoCoder.getFromLocation(lat, long, 1)
-        name = address?.get(0)?.locality
-        if (name == null) {
-            name = address?.get(0)?.adminArea
-            if (name == null) {
-                name = address?.get(0)?.subAdminArea
+        try {
+            withContext(Dispatchers.IO) {
+                val geoCoder = Geocoder(requireContext(), Locale.US)
+                val address = geoCoder.getFromLocation(lat, long, 1)
+                name = address?.get(0)?.locality
+                if (name == null) {
+                    name = address?.get(0)?.adminArea
+                    if (name == null) {
+                        name = address?.get(0)?.subAdminArea
+                    }
+                }
+                withContext(Dispatchers.Main){
+                    cityNameLD.value = name!!
+                }
             }
+        } catch (e: IOException) {
+            // Handle the exception (e.g., log it or show an error message)
+            Log.e("GeocodingError", "Error getting city name", e)
         }
-        cityName = name!!
     }
 
     companion object {
