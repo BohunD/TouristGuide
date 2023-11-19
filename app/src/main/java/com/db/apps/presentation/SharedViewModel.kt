@@ -4,13 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.db.apps.CheckerLD
+import com.db.apps.SingleLiveData
 import com.google.android.gms.maps.model.LatLng
 
 class SharedViewModel: ViewModel() {
 
-    val latLngLD= MutableLiveData<LatLng>()
-    private val _locationReceivedLD= MutableLiveData<CheckerLD<Boolean>>()
-    val locationReceivedLD: LiveData<CheckerLD<Boolean>>
+    val latLngLD= SingleLiveData<LatLng>()
+    private val _locationReceivedLD= SingleLiveData<CheckerLD<Boolean>>()
+    val locationReceivedLD: SingleLiveData<CheckerLD<Boolean>>
         get() = _locationReceivedLD
 
     fun saveLatLng(data: LatLng){

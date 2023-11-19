@@ -3,7 +3,6 @@ package com.db.apps
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.db.apps.databinding.AttractionItemBinding
-import com.db.apps.domain.usecases.AddToFavouritesUseCase
 import com.db.apps.model.ResultAttraction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

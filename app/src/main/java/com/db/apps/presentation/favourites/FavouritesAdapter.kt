@@ -1,7 +1,6 @@
 package com.db.apps.presentation.favourites
 
 import android.util.Log
-import com.db.apps.PlaceListener
 import com.db.apps.loadUrl
 
 
@@ -10,7 +9,6 @@ import android.view.ViewGroup
 import com.db.apps.R
 import com.db.apps.RvAdapter
 import com.db.apps.databinding.AttractionItemBinding
-import com.db.apps.domain.usecases.AddToFavouritesUseCase
 import com.db.apps.model.PlaceEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

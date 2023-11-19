@@ -8,24 +8,24 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.db.apps.PlaceListenerImpl
-import com.db.apps.AttractionsAdapter
+import com.db.apps.SharedPrefsUtil
 import com.db.apps.SingleLiveData
 import com.db.apps.Utils
 import com.db.apps.data.repository.LocationRepositoryImpl
 import com.db.apps.databinding.FragmentAttractionsBinding
-import com.db.apps.domain.repository.LocationRepository
-import com.db.apps.domain.usecases.AddToFavouritesUseCase
+import com.db.apps.domain.usecases.AddToDbUseCase
+import com.db.apps.domain.usecases.GetFromFavouritesUseCase
+import com.db.apps.domain.usecases.LikePlaceUseCase
 import com.db.apps.getPhotoUrl
 import com.db.apps.model.PlaceEntity
-import com.db.apps.model.ResultAttraction
 import com.db.apps.model.RootAttraction
 import com.db.apps.presentation.favourites.FavouritesAdapter
 import com.db.apps.retrofit.MyGoogleApiService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Call
@@ -42,7 +42,7 @@ class AttractionsFragment : Fragment() {
     private var lat: Double = 0.0
     private var lng: Double = 0.0
 
-    private val myRvList = mutableListOf<PlaceEntity>()
+    private var myRvList = mutableListOf<PlaceEntity>()
     private lateinit var adapter: FavouritesAdapter
 
     private lateinit var sharedViewModel: SharedViewModel
@@ -51,7 +51,11 @@ class AttractionsFragment : Fragment() {
     private var cityNameLD = SingleLiveData<String>()
 
     private lateinit var repository: LocationRepositoryImpl
-    private lateinit var addToFavouritesUseCase: AddToFavouritesUseCase
+    private lateinit var addToFavouritesUseCase: AddToDbUseCase
+    private lateinit var getFromFavouritesUseCase: GetFromFavouritesUseCase
+    private lateinit var likePlaceUseCase: LikePlaceUseCase
+    private var cityFromPrefs: String?=null
+    private var sharedPrefsUtil:SharedPrefsUtil?=null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,31 +67,68 @@ class AttractionsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        sharedPrefsUtil = SharedPrefsUtil(requireContext())
         myService = Utils.googleApiService
         repository = LocationRepositoryImpl(requireContext())
-        addToFavouritesUseCase = AddToFavouritesUseCase(repository)
+        addToFavouritesUseCase = AddToDbUseCase(repository)
+        getFromFavouritesUseCase = GetFromFavouritesUseCase(repository)
+        likePlaceUseCase = LikePlaceUseCase(repository)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         sharedViewModel.latLngLD.observe(requireActivity()) {
+            Log.d("ADDING_PLACES", "sharedViewModel.latLngLD.observe")
             lat = it.latitude
             lng = it.longitude
-            lifecycleScope.launch(Dispatchers.Main) {
-                showInfo()
+            lifecycleScope.launch(Dispatchers.IO){
+                cityFromPrefs= sharedPrefsUtil?.getString()
+                getCityName(lat, lng)
             }
+                showInfo()
         }
     }
 
     private fun showInfo(){
-        lifecycleScope.launch(Dispatchers.IO){
-            getCityName(lat, lng)
-        }
         cityNameLD.observe(viewLifecycleOwner){
+            Log.d("ADDING_PLACES", "cityNameLD.observe")
+
+            if(cityFromPrefs!=null){
+                Log.d("cityFromPrefs!=null", "$cityFromPrefs")
+                if(cityFromPrefs == it){
+                    observePlaces()
+                }else{
+                    sharedPrefsUtil?.saveString(it)
+                    findAttractions()
+
+                }
+            }
             binding.tvCityName.text = it
-            findAttractions()
         }
+    }
+
+    private fun observePlaces(){
+        Log.d("ADDING_PLACES", "observePlaces")
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val attractions = getFromFavouritesUseCase.execute()
+
+            if(attractions.isEmpty()){
+                Log.d("ADDING_PLACES", "attractions.isEmpty()")
+                findAttractions()
+            }else{
+                Log.d("ADDING_PLACES", "else: ${attractions.toString()}")
+                myRvList = attractions.toMutableList()
+                withContext(Dispatchers.Main){
+                    initAdapter()
+
+                }
+
+            }
+        }
+
 
     }
 
     private fun findAttractions() {
+        Log.d("ADDING_PLACES"," findAttractions()")
         val url = getUrl()
         myService.getPlacesOfInterest(url)
             .enqueue(object : retrofit2.Callback<RootAttraction> {
@@ -97,7 +138,8 @@ class AttractionsFragment : Fragment() {
                     response: Response<RootAttraction>,
                 ) {
                     try {
-                        if (response.isSuccessful && response.body()?.results?.isNotEmpty()!!) {
+                        myRvList.clear()
+                            if (response.isSuccessful && response.body()?.results?.isNotEmpty()!!) {
                             for (i in 0 until response.body()?.results?.size!!) {
                                 val googlePlace = response.body()?.results!![i]
                                 var photo = ""
@@ -116,26 +158,40 @@ class AttractionsFragment : Fragment() {
                                     )
                                 )
 
-                                Log.d("findAttractions", googlePlace.photos.toString())
 
                             }
                         }
-                        adapter = FavouritesAdapter()
-                        adapter.setList(myRvList)
-                        binding.rvAttractions.adapter = adapter
-                        listener = PlaceListenerImpl(requireActivity(), addToFavouritesUseCase)
-                        adapter.setClickListener(listener)
+                        addPlacesToDb()
+                        initAdapter()
                     }catch (e: Exception){
                         Toast.makeText(requireContext(), "Internet error. Try again", Toast.LENGTH_LONG).show()
                     }
                 }
 
                 override fun onFailure(call: Call<RootAttraction>, t: Throwable) {
-                    Log.d("ATTRACTIONS2:", t.message.toString())
                     Toast.makeText(requireContext(), "Failed :(", Toast.LENGTH_LONG).show()
                 }
 
             })
+    }
+
+    private fun initAdapter(){
+        adapter = FavouritesAdapter()
+        adapter.setList(myRvList)
+        binding.rvAttractions.adapter = adapter
+        listener = PlaceListenerImpl(requireActivity(), likePlaceUseCase)
+        adapter.setClickListener(listener)
+    }
+
+    private fun addPlacesToDb(){
+        Log.d("ADDING_PLACES", "addPlacesToDb")
+        lifecycleScope.launch(Dispatchers.IO){
+            Log.d("ADDING_PLACES", myRvList.toString())
+            for(place in myRvList){
+                addToFavouritesUseCase.execute(place)
+            }
+        }
+
     }
 
     private fun getUrl(): String {

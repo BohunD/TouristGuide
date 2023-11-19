@@ -7,7 +7,6 @@ import com.db.apps.domain.usecases.GetFromFavouritesUseCase
 import com.db.apps.model.PlaceEntity
 
 class FavouritesViewModel(
-    private val getFromFavouritesUseCase: GetFromFavouritesUseCase
 ): ViewModel() {
     private val _favouritePlacesLD = MutableLiveData<List<PlaceEntity>>()
      val favouritePlacesLD : LiveData<List<PlaceEntity>>

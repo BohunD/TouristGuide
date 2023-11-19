@@ -23,6 +23,11 @@ import kotlin.coroutines.resumeWithException
 class LocationRepositoryImpl(
     private val context: Context
 ) : LocationRepository {
+    val db = Room.databaseBuilder(
+        context,
+        FavouritesDatabase::class.java,
+        "Favourites"
+    ).build()
 
     override suspend fun getPlacesNearby(
         lat: Double, lng: Double,
@@ -49,12 +54,8 @@ class LocationRepositoryImpl(
         return resultList
     }
 
-    override suspend fun addPlaceToFavourites(place: ResultAttraction) {
-        val db = Room.databaseBuilder(
-            context,
-            FavouritesDatabase::class.java,
-            "Favourites"
-        ).build()
+    override suspend fun addPlaceToDb(place: ResultAttraction) {
+
         val ph= mutableListOf<String>()
         for(photo in place.photos){
             ph.add(getPhotoUrl(photo))
@@ -71,39 +72,41 @@ class LocationRepositoryImpl(
         try{
             db.favouritesDao().insert(entity)
             Log.d("RepoImpl, addPlaceToFavourites", "DB NOT contains: $place")
-            entity.isLiked = true
         }catch (e: Exception){
             db.favouritesDao().delete(entity)
             Log.d("RepoImpl, addPlaceToFavourites", "Exception: $e")
-            entity.isLiked = false
         }
 
     }
 
-    override suspend fun addPlaceToFavourites(place: PlaceEntity) {
-        val db = Room.databaseBuilder(
-            context,
-            FavouritesDatabase::class.java,
-            "Favourites"
-        ).build()
+    override suspend fun addPlaceToDb(place: PlaceEntity) {
+
         try{
-            place.isLiked = true
             db.favouritesDao().insert(place)
             Log.d("RepoImpl, addPlaceToFavourites", "DB NOT contains: $place")
         }catch (e: Exception){
-            place.isLiked = false
             db.favouritesDao().delete(place)
             Log.d("RepoImpl, addPlaceToFavourites", "Exception: $e")
         }
     }
 
-    override  fun getPlacesFromFavourites(): LiveData<List<PlaceEntity>> {
-        val db = Room.databaseBuilder(
-            context,
-            FavouritesDatabase::class.java,
-            "Favourites"
-        ).build()
-        Log.d("getPlacesFromFavourites", "${db.favouritesDao().getAll().value}")
+    override suspend fun likePlace(place: PlaceEntity) {
+        val dbPlace = db.favouritesDao().getPlaceById(placeId = place.place_id)
+        if (dbPlace != null) {
+            Log.d("GET_BY_ID", dbPlace.toString())
+            db.favouritesDao().updateIsLiked(dbPlace.place_id, !dbPlace.isLiked)
+        } else {
+            Log.e("GET_BY_ID", "Place not found in the database")
+        }
+    }
+
+    override suspend fun getLikedPlaces(): LiveData<List<PlaceEntity>> {
+        return db.favouritesDao().getLikedPlaces()
+    }
+
+    override  fun getPlacesFromFavourites(): List<PlaceEntity> {
+
+        Log.d("getPlacesFromFavourites", "${db.favouritesDao().getAll()}")
         return db.favouritesDao().getAll()
     }
 

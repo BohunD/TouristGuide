@@ -11,9 +11,10 @@ import androidx.lifecycle.lifecycleScope
 import com.db.apps.PlaceListenerImpl
 import com.db.apps.data.repository.LocationRepositoryImpl
 import com.db.apps.databinding.FragmentFavouritesBinding
-import com.db.apps.domain.usecases.AddToFavouritesUseCase
+import com.db.apps.domain.usecases.AddToDbUseCase
 import com.db.apps.domain.usecases.GetFromFavouritesUseCase
-import com.db.apps.presentation.favourites.FavouritesAdapter
+import com.db.apps.domain.usecases.GetLikedPlacesUseCase
+import com.db.apps.domain.usecases.LikePlaceUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,8 +25,9 @@ class FavouritesFragment : Fragment() {
     private lateinit var adapter: FavouritesAdapter
     private lateinit var listener: PlaceListenerImpl
     private lateinit var repository: LocationRepositoryImpl
+    private lateinit var getLikePlaceUseCase: GetLikedPlacesUseCase
     private lateinit var getFromFavouritesUseCase: GetFromFavouritesUseCase
-    private lateinit var addToFavouritesUseCase: AddToFavouritesUseCase
+    private lateinit var likePlaceUseCase: LikePlaceUseCase
     private lateinit var viewModel: FavouritesViewModel
 
     override fun onCreateView(
@@ -39,8 +41,8 @@ class FavouritesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         repository = LocationRepositoryImpl(requireContext())
-        val vmFactory = FavouritesViewModelFactory(requireContext())
-        viewModel = ViewModelProvider(this, vmFactory)[FavouritesViewModel::class.java]
+        //val vmFactory = FavouritesViewModelFactory(requireContext())
+        viewModel = ViewModelProvider(requireActivity())[FavouritesViewModel::class.java]
         adapter = FavouritesAdapter()
         binding.rvAttractions.adapter = adapter
 
@@ -58,16 +60,15 @@ class FavouritesFragment : Fragment() {
 
     private fun getPlaces() {
         Log.d("FavouritesFragment", "getPlaces")
-        getFromFavouritesUseCase = GetFromFavouritesUseCase(repository)
-        addToFavouritesUseCase = AddToFavouritesUseCase(repository)
+        getLikePlaceUseCase = GetLikedPlacesUseCase(repository)
+        likePlaceUseCase = LikePlaceUseCase(repository)
         lifecycleScope.launch(Dispatchers.IO) {
-            val placesFromDb = getFromFavouritesUseCase.execute()
-            Log.d("FavouritesFragment", "places: $placesFromDb")
             withContext(Dispatchers.Main) {
-                getFromFavouritesUseCase.execute().observe(viewLifecycleOwner) {
+                getLikePlaceUseCase.execute().observe(viewLifecycleOwner) {
                     adapter.setList(it)
+                    viewModel.updateList(it)
                     Log.e("MyLoggg", it.toString())
-                    listener = PlaceListenerImpl(requireActivity(), addToFavouritesUseCase)
+                    listener = PlaceListenerImpl(requireActivity(), likePlaceUseCase)
                     adapter.setClickListener(listener)
 
                 }

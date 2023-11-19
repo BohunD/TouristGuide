@@ -1,3 +1,4 @@
+/*
 package com.db.apps.presentation.favourites
 
 import android.app.Activity
@@ -28,4 +29,4 @@ class FavouritesViewModelFactory(
         }
         return super.create(modelClass)
     }
-}
+}*/
