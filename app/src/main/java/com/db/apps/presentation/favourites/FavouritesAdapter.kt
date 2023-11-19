@@ -42,11 +42,7 @@ class FavouritesAdapter(
         holder.layout.setOnClickListener { listener?.onLayoutClick(list[position]) }
         Log.d("MMMY_LOG", list[position].toString())
         // Set the appropriate drawable based on the liked state
-        if (list[position].isLiked) {
-            holder.ivLike.setImageResource(R.drawable.like_active)
-        } else {
-            holder.ivLike.setImageResource(R.drawable.like_inactive)
-        }
+        selectIcon(holder,position)
 
         holder.ivLike.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
@@ -54,10 +50,19 @@ class FavouritesAdapter(
 
                 // Notify the adapter that the item at this position has changed
                 withContext(Dispatchers.Main){
+                    list[position].isLiked = !list[position].isLiked
+                    selectIcon(holder,position)
                     notifyItemChanged(position)
-
                 }
             }
+        }
+    }
+
+    private fun selectIcon(holder: ViewHolder, position: Int){
+        if (list[position].isLiked) {
+            holder.ivLike.setImageResource(R.drawable.like_active)
+        } else {
+            holder.ivLike.setImageResource(R.drawable.like_inactive)
         }
     }
 

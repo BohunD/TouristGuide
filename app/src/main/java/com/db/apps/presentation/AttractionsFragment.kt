@@ -82,7 +82,6 @@ class AttractionsFragment : Fragment() {
                 cityFromPrefs= sharedPrefsUtil?.getString()
                 getCityName(lat, lng)
             }
-                showInfo()
         }
     }
 
@@ -102,6 +101,11 @@ class AttractionsFragment : Fragment() {
             }
             binding.tvCityName.text = it
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showInfo()
     }
 
     private fun observePlaces(){
