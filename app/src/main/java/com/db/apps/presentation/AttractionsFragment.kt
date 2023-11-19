@@ -2,18 +2,22 @@ package com.db.apps.presentation
 
 import android.location.Geocoder
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.room.Room
 import com.db.apps.PlaceListenerImpl
 import com.db.apps.SharedPrefsUtil
 import com.db.apps.SingleLiveData
 import com.db.apps.Utils
+import com.db.apps.data.db.FavouritesDatabase
 import com.db.apps.data.repository.LocationRepositoryImpl
 import com.db.apps.databinding.FragmentAttractionsBinding
 import com.db.apps.domain.usecases.AddToDbUseCase
@@ -48,7 +52,7 @@ class AttractionsFragment : Fragment() {
     private lateinit var sharedViewModel: SharedViewModel
 
     private lateinit var listener: PlaceListenerImpl
-    private var cityNameLD = SingleLiveData<String>()
+    private var cityNameLD = MutableLiveData<String>()
 
     private lateinit var repository: LocationRepositoryImpl
     private lateinit var addToFavouritesUseCase: AddToDbUseCase
@@ -56,7 +60,13 @@ class AttractionsFragment : Fragment() {
     private lateinit var likePlaceUseCase: LikePlaceUseCase
     private var cityFromPrefs: String?=null
     private var sharedPrefsUtil:SharedPrefsUtil?=null
-
+    private val db by lazy{
+         Room.databaseBuilder(
+            requireContext(),
+            FavouritesDatabase::class.java,
+            "Favourites"
+        ).build()
+    }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
@@ -78,10 +88,15 @@ class AttractionsFragment : Fragment() {
             Log.d("ADDING_PLACES", "sharedViewModel.latLngLD.observe")
             lat = it.latitude
             lng = it.longitude
-            lifecycleScope.launch(Dispatchers.IO){
-                cityFromPrefs= sharedPrefsUtil?.getString()
-                getCityName(lat, lng)
-            }
+            getCityFromPrefs()
+        }
+    }
+
+    private fun getCityFromPrefs(){
+        lifecycleScope.launch(Dispatchers.IO){
+            cityFromPrefs= sharedPrefsUtil?.getString()
+            Log.d("cityFromPrefs", cityFromPrefs!!)
+            getCityName(lat, lng)
         }
     }
 
@@ -93,9 +108,14 @@ class AttractionsFragment : Fragment() {
                 Log.d("cityFromPrefs!=null", "$cityFromPrefs")
                 if(cityFromPrefs == it){
                     observePlaces()
+                    Log.d("observePlaces cityFromPrefs!=null", "$cityFromPrefs")
+
                 }else{
+
                     sharedPrefsUtil?.saveString(it)
                     findAttractions()
+                    Log.d("observePlaces cityFromPrefs==null", "$cityFromPrefs")
+
 
                 }
             }
@@ -105,8 +125,12 @@ class AttractionsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        cityFromPrefs= sharedPrefsUtil?.getString()
         showInfo()
+
     }
+
+
 
     private fun observePlaces(){
         Log.d("ADDING_PLACES", "observePlaces")
@@ -115,11 +139,12 @@ class AttractionsFragment : Fragment() {
             val attractions = getFromFavouritesUseCase.execute()
 
             if(attractions.isEmpty()){
-                Log.d("ADDING_PLACES", "attractions.isEmpty()")
+                Log.d("observePlaces", "attractions.isEmpty()")
                 findAttractions()
             }else{
                 Log.d("ADDING_PLACES", "else: ${attractions.toString()}")
                 myRvList = attractions.toMutableList()
+                Log.d("observePlaces", myRvList.toString())
                 withContext(Dispatchers.Main){
                     initAdapter()
 
@@ -134,6 +159,9 @@ class AttractionsFragment : Fragment() {
     private fun findAttractions() {
         Log.d("ADDING_PLACES"," findAttractions()")
         val url = getUrl()
+        lifecycleScope.launch(Dispatchers.IO) {
+            db.favouritesDao().clearDb()
+        }
         myService.getPlacesOfInterest(url)
             .enqueue(object : retrofit2.Callback<RootAttraction> {
 
@@ -211,11 +239,12 @@ class AttractionsFragment : Fragment() {
     }
 
 
+    private var counter = 0
 
     private suspend fun getCityName(lat: Double, long: Double) {
         var name: String?
         try {
-            withContext(Dispatchers.IO) {
+
                 val geoCoder = Geocoder(requireContext(), Locale.US)
                 val address = geoCoder.getFromLocation(lat, long, 1)
                 name = address?.get(0)?.locality
@@ -228,9 +257,15 @@ class AttractionsFragment : Fragment() {
                 withContext(Dispatchers.Main){
                     cityNameLD.value = name!!
                 }
-            }
+
         } catch (e: IOException) {
-            // Handle the exception (e.g., log it or show an error message)
+            counter+=1
+            if(counter<5){
+                withContext(Dispatchers.IO){
+                    delay(1000)
+                }
+                getCityName(lat,long)
+            }
             Log.e("GeocodingError", "Error getting city name", e)
         }
     }

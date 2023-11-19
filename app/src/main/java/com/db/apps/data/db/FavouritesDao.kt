@@ -21,8 +21,12 @@ interface FavouritesDao {
     @Query("SELECT * FROM places WHERE is_liked = 1")
     fun getLikedPlaces(): LiveData<List<PlaceEntity>>
 
+    @Query("DELETE FROM places")
+    fun clearDb()
+
     @Query("UPDATE places SET is_liked = :isLiked WHERE place_id = :placeId")
     fun updateIsLiked(placeId: String, isLiked: Boolean)
+
 
     @Insert
     fun insert(vararg place: PlaceEntity)

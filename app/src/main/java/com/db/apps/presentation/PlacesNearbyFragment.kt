@@ -265,7 +265,7 @@ class PlacesNearbyFragment : Fragment() {
 
             val optionsMarker = MarkerOptions()
                 .position(latLng)
-                .title("Your position")
+                .title("Your point")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
 
             marker = mMap.addMarker(optionsMarker)

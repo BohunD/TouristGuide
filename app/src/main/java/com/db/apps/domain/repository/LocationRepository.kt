@@ -14,5 +14,5 @@ interface LocationRepository {
     suspend fun getLikedPlaces(): LiveData<List<PlaceEntity>>
 
 
-     fun getPlacesFromFavourites(): List<PlaceEntity>
+    fun getPlacesFromFavourites(): List<PlaceEntity>
 }

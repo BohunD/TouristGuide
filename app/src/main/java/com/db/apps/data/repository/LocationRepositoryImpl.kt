@@ -85,7 +85,7 @@ class LocationRepositoryImpl(
             db.favouritesDao().insert(place)
             Log.d("RepoImpl, addPlaceToFavourites", "DB NOT contains: $place")
         }catch (e: Exception){
-            db.favouritesDao().delete(place)
+            //db.favouritesDao().delete(place)
             Log.d("RepoImpl, addPlaceToFavourites", "Exception: $e")
         }
     }
