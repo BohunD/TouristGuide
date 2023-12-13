@@ -1,11 +1,18 @@
 package com.db.apps.presentation
 
 import android.Manifest
+import android.app.AlertDialog
+import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
+import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -108,6 +115,15 @@ class PlacesNearbyFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (!isInternetAvailable()) {
+            showAlertDialog("Internet is turned off", "Please turn on your internet connection.")
+            return
+        }
+
+        if (!isLocationEnabled()) {
+            showLocationSettingsDialog()
+            return
+        }
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         viewModel = ViewModelProvider(
             this,
@@ -126,16 +142,60 @@ class PlacesNearbyFragment : Fragment() {
             true
         }
     }
+    private fun isInternetAvailable(): Boolean {
+        val connectivityManager =
+            requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo = connectivityManager.activeNetworkInfo
+        return networkInfo != null && networkInfo.isConnected
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager =
+            requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+    private fun showAlertDialog(title: String, message: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+                requireActivity().finish()
+                requireActivity().finishAffinity()}
+            .show()
+    }
+
+    private fun showLocationSettingsDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Location is turned off")
+            .setMessage("Please turn on your location to use this feature.")
+            .setPositiveButton("Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                startActivity(intent)
+            }
+            .setNegativeButton("Quit") { dialog, _ ->
+                dialog.dismiss()
+                requireActivity().finish()
+                requireActivity().finishAffinity()
+            }
+            .show()
+    }
 
     private fun findPlacesNearBy(placesTypes: List<String>) {
         lifecycleScope.launch(Dispatchers.IO) {
             viewModel.getPlacesNearby(lat, lng, placesTypes)
         }
         showLoading()
+        var counter = 0
         viewModel.placesNearbyLiveData.observe(viewLifecycleOwner) {
             showPlaces(localPlacesTypes, it)
+
         }
     }
+
+
 
     private fun showPlaces(placeTypes: List<String>, places: List<Result>) {
         myMap?.clear()

@@ -20,8 +20,7 @@ class MainActivity : AppCompatActivity() {
         R.drawable.poi,
         R.drawable.heart
     )
-    // TODO add Progressbar while geeting places nearby;
-    // TODO add livedata for "location received" and then make tabslayout visible
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewModel: SharedViewModel
     @SuppressLint("UseCompatLoadingForDrawables")
